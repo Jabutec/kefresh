@@ -20,7 +20,7 @@ export default function SalonPage() {
             </h1>
             <p className="text-sm text-[#888780] mt-1">4C specialist · Sandton</p>
           </div>
-          <span className="bg-[#fbeaf0] text-[#d4537e] text-xs font-medium px-3 py-1 rounded-full">
+          <span className="bg-[#FEF2EF] text-[#E8472A] text-xs font-medium px-3 py-1 rounded-full">
             Open now
           </span>
         </div>
@@ -59,12 +59,12 @@ export default function SalonPage() {
                 <p className="text-xs text-[#b4b2a9] mt-0.5">{service.duration}</p>
               </div>
               <div className="text-right">
-                <p className="text-sm font-medium text-[#d4537e]">{service.price}</p>
+                <p className="text-sm font-medium text-[#E8472A]">{service.price}</p>
               </div>
             </div>
           ))}
         </div>
-
+d
         {/* Divider */}
         <div className="border-t border-[#e8e4df] my-5" />
 
@@ -78,7 +78,7 @@ export default function SalonPage() {
 
       {/* Book Now button */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#e8e4df] px-6 py-4">
-        <a href="/booking" className="w-full bg-[#d4537e] text-white py-3 rounded-2xl text-sm font-medium hover:bg-[#c4436e] transition-colors block text-center">
+        <a href="/booking" className="w-full bg-[#E8472A] text-white py-3 rounded-2xl text-sm font-medium hover:bg-[#D63D22] transition-colors block text-center">
   book now — secure with R100 deposit
 </a>
       </div>

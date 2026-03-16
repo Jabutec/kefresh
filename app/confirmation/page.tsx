@@ -8,8 +8,8 @@ export default function ConfirmationPage() {
   return (
     <main className="min-h-screen bg-[#fdf6f0] flex flex-col items-center justify-center px-6">
 
-      <div className="w-24 h-24 rounded-full bg-[#fbeaf0] flex items-center justify-center mb-6">
-        <span className="text-4xl text-[#d4537e]">✓</span>
+      <div className="w-24 h-24 rounded-full bg-[#FEF2EF] flex items-center justify-center mb-6">
+        <span className="text-4xl text-[#E8472A]">✓</span>
       </div>
 
       <h1 className="text-2xl font-semibold text-[#2c2c2a] text-center">you're booked!</h1>
@@ -34,12 +34,12 @@ export default function ConfirmationPage() {
         </div>
         <div className="border-t border-[#e8e4df] pt-3 flex justify-between text-sm">
           <span className="text-[#888780]">deposit paid</span>
-          <span className="text-[#d4537e] font-semibold">R100 ✓</span>
+          <span className="text-[#E8472A] font-semibold">R100 ✓</span>
         </div>
       </div>
 
-      <div className="w-full max-w-sm bg-[#fbeaf0] rounded-2xl px-5 py-4 mt-4">
-        <p className="text-xs text-[#d4537e] font-medium mb-1">reminder sent to your phone</p>
+      <div className="w-full max-w-sm bg-[#FEF2EF] rounded-2xl px-5 py-4 mt-4">
+        <p className="text-xs text-[#E8472A] font-medium mb-1">reminder sent to your phone</p>
         <p className="text-xs text-[#888780]">you'll receive an SMS 24hrs before your appointment</p>
       </div>
 
@@ -47,14 +47,14 @@ export default function ConfirmationPage() {
         onClick={() => setSaved(true)}
         className={`w-full max-w-sm mt-4 py-3 rounded-2xl text-sm font-medium border transition-colors ${
           saved
-            ? "bg-[#fbeaf0] border-[#d4537e] text-[#d4537e]"
+            ? "bg-[#FEF2EF] border-[#E8472A] text-[#E8472A]"
             : "bg-white border-[#e8e4df] text-[#2c2c2a]"
         }`}
       >
         {saved ? "✓ saved to calendar" : "save to calendar"}
       </button>
 
-      <a href="/" className="w-full max-w-sm mt-3 py-3 rounded-2xl text-sm font-medium bg-[#d4537e] text-white text-center block hover:bg-[#c4436e] transition-colors">
+      <a href="/" className="w-full max-w-sm mt-3 py-3 rounded-2xl text-sm font-medium bg-[#E8472A] text-white text-center block hover:bg-[#D63D22] transition-colors">
         discover more salons
       </a>
 
