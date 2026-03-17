@@ -15,6 +15,12 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [searchQuery, setSearchQuery] = useState("")
   const [salons, setSalons] = useState<any[]>([])
+  const [user, setUser] = useState<any>(null)
+
+  useEffect(() => {
+    const stored = localStorage.getItem("kefresh_user")
+    if (stored) setUser(JSON.parse(stored))
+  }, [])
 
   useEffect(() => {
     fetch("/api/salons")
@@ -42,12 +48,31 @@ export default function Home() {
         </div>
 
         <div className="flex items-center gap-3 shrink-0 ml-auto">
-          <a href="/login" className="text-sm text-[#5f5e5a] hover:text-[#E8472A] transition-colors px-4 py-2">
-            login
-          </a>
-          <a href="/signup" className="text-sm bg-[#E8472A] text-white px-5 py-2.5 rounded-2xl hover:bg-[#D63D22] transition-colors">
-            sign up
-          </a>
+          {user ? (
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-[#2c2c2a] font-medium">
+                 {user.firstName} 
+              </span>
+              <button
+                onClick={() => {
+                  localStorage.removeItem("kefresh_user")
+                  setUser(null)
+                }}
+                className="text-sm text-[#888780] hover:text-[#E8472A] transition-colors"
+              >
+                logout
+              </button>
+            </div>
+            ) : (
+            <>
+              <a href="/login" className="text-sm text-[#5f5e5a] hover:text-[#E8472A] transition-colors px-4 py-2">
+                login
+              </a>
+              <a href="/signup" className="text-sm bg-[#E8472A] text-white px-5 py-2.5 rounded-2xl hover:bg-[#D63D22] transition-colors">
+                sign up
+              </a>
+            </>
+          )}
         </div>
       </nav>
 
