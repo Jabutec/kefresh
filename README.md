@@ -154,6 +154,6 @@ DATABASE_URL=           # Prisma PostgreSQL connection string
 
 ## Founded
 
-March 2026 — Johannesburg, South Africa 🇿🇦
+March 2026 — Meyerton , South Africa
 
 Built by Jabulani Mokoena — solo founder, IT graduate, builder.
