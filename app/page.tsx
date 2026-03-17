@@ -37,7 +37,7 @@ export default function Home() {
           ke<span className="text-[#E8472A]">fresh</span>
         </a>
 
-        <div className="flex-1 max-w-xl">
+        <div className="flex-1 max-w-xl max-sm:hidden">
           <input
             type="text"
             value={searchQuery}
@@ -77,18 +77,18 @@ export default function Home() {
       </nav>
 
       {/* Hero */}
-      <div className="px-8 pt-12 pb-8 max-w-7xl mx-auto">
-        <h1 className="text-5xl font-semibold text-[#2c2c2a] leading-tight max-w-lg">
+      <div className="px-8 pt-12 pb-8 max-w-7xl mx-auto max-sm:px-4 max-sm:pt-8">
+        <h1 className="text-5xl font-semibold text-[#2c2c2a] leading-tight max-w-lg max-sm:text-3xl">
           discover beauty <span className="text-[#E8472A]">near you</span>
         </h1>
-        <p className="text-[#888780] mt-3 text-lg">
+        <p className="text-[#888780] mt-3 text-sm md:text-lg">
           book the best salons, barbers and stylists in your city
         </p>
       </div>
 
       {/* Category cards */}
-      <div className="px-8 pb-10 max-w-7xl mx-auto">
-        <div className="grid grid-cols-6 gap-4">
+      <div className="px-8 pb-10 max-w-7xl mx-auto max-sm:px-4">
+        <div className="grid grid-cols-6 gap-3 max-sm:grid-cols-3">
           {categories.map((cat) => (
             <button
               key={cat.name}
@@ -114,11 +114,11 @@ export default function Home() {
       </div>
 
       {/* Salon grid */}
-      <div className="px-8 pb-16 max-w-7xl mx-auto">
+      <div className="px-8 pb-16 max-w-7xl mx-auto max-sm:px-4">
         <h2 className="text-sm font-medium text-[#888780] mb-5 uppercase tracking-wide">
           top spots near you
         </h2>
-        <div className="columns-4 gap-4">
+        <div className="columns-4 gap-4 max-sm:columns-2">
           {salons.length === 0 ? (
             <p className="text-sm text-[#888780]">loading salons...</p>
           ) : (
