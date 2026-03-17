@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 const categories = [
   { name: "locs", image: "https://images.unsplash.com/photo-1653263169788-9332cdbf07f5?w=400&q=80" },
@@ -11,18 +11,16 @@ const categories = [
   { name: "weave", image: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&q=80" },
 ]
 
-const salons = [
-  { name: "Zola's Natural Hair Studio", specialty: "4C specialist", location: "Sandton", price: "from R250", color: "bg-[#f5c4d1]", height: "h-48" },
-  { name: "Locs & Love by Thandi", specialty: "Locs specialist", location: "Soweto", price: "from R180", color: "bg-[#9fe1cb]", height: "h-64" },
-  { name: "Cuts & Culture Barbershop", specialty: "Wolf cut", location: "Braamfontein", price: "from R120", color: "bg-[#fac775]", height: "h-56" },
-  { name: "The Glam Room", specialty: "Braids", location: "Rosebank", price: "from R300", color: "bg-[#afa9ec]", height: "h-40" },
-  { name: "Nails by Nomsa", specialty: "Nail art", location: "Midrand", price: "from R150", color: "bg-[#f5c4d1]", height: "h-52" },
-  { name: "Sharp Cuts", specialty: "Barber", location: "Alex", price: "from R80", color: "bg-[#fac775]", height: "h-44" },
-]
-
 export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [searchQuery, setSearchQuery] = useState("")
+  const [salons, setSalons] = useState<any[]>([])
+
+  useEffect(() => {
+    fetch("/api/salons")
+      .then(res => res.json())
+      .then(data => setSalons(data))
+  }, [])
 
   return (
     <main className="min-h-screen bg-[#fdf6f0]">
@@ -96,18 +94,22 @@ export default function Home() {
           top spots near you
         </h2>
         <div className="columns-4 gap-4">
-          {salons.map((salon) => (
-            <a key={salon.name} href="/salon" className="break-inside-avoid mb-4 block">
-              <div className="bg-white rounded-2xl overflow-hidden border border-[#e8e4df] hover:border-[#E8472A] transition-colors cursor-pointer">
-                <div className={`${salon.color} ${salon.height}`} />
-                <div className="p-3">
-                  <p className="text-sm font-medium text-[#2c2c2a]">{salon.name}</p>
-                  <p className="text-xs text-[#888780] mt-1">{salon.specialty} · {salon.location}</p>
-                  <p className="text-xs text-[#E8472A] mt-2 font-medium">{salon.price}</p>
+          {salons.length === 0 ? (
+            <p className="text-sm text-[#888780]">loading salons...</p>
+          ) : (
+            salons.map((salon) => (
+              <a key={salon.id} href={`/salon/${salon.id}`} className="break-inside-avoid mb-4 block">
+                <div className="bg-white rounded-2xl overflow-hidden border border-[#e8e4df] hover:border-[#E8472A] transition-colors cursor-pointer">
+                  <div className="h-48 bg-[#FEF2EF]" />
+                  <div className="p-3">
+                    <p className="text-sm font-medium text-[#2c2c2a]">{salon.name}</p>
+                    <p className="text-xs text-[#888780] mt-1">{salon.specialty} · {salon.location}</p>
+                    <p className="text-xs text-[#E8472A] mt-2 font-medium">from R{salon.services[0]?.price ?? "—"}</p>
+                  </div>
                 </div>
-              </div>
-            </a>
-          ))}
+              </a>
+            ))
+          )}
         </div>
       </div>
 
