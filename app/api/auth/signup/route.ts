@@ -1,13 +1,6 @@
 import { NextResponse } from "next/server"
-import { PrismaClient } from "../../../generated/prisma/client"
-import { PrismaPg } from "@prisma/adapter-pg"
+import { prisma } from "../../../../lib/prisma"
 import bcrypt from "bcryptjs"
-
-const adapter = new PrismaPg({
-  connectionString: "postgres://postgres:postgres@localhost:51214/template1?sslmode=disable"
-})
-
-const prisma = new PrismaClient({ adapter })
 
 export async function POST(request: Request) {
   try {
