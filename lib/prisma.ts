@@ -1,7 +1,11 @@
 import { PrismaClient } from "../app/generated/prisma/client"
 import { PrismaPg } from "@prisma/adapter-pg"
 
-const connectionString = process.env.DIRECT_URL!
+const connectionString = process.env.DIRECT_URL || process.env.DATABASE_URL || ""
+
+if (!connectionString) {
+  throw new Error("No database connection string found")
+}
 
 const adapter = new PrismaPg({ connectionString })
 
