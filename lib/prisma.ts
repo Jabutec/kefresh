@@ -6,9 +6,9 @@ const globalForPrisma = globalThis as unknown as {
 }
 
 function createPrismaClient() {
-  const connectionString = process.env.NODE_ENV === "production"
-    ? process.env.DIRECT_URL ?? ""
-    : "postgres://postgres:postgres@localhost:51214/template1?sslmode=disable"
+  const connectionString = process.env.DIRECT_URL || 
+    process.env.DATABASE_URL || 
+    "postgres://postgres:postgres@localhost:51214/template1?sslmode=disable"
 
   const adapter = new PrismaPg({ connectionString })
   return new PrismaClient({ adapter })
