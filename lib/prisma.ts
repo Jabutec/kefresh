@@ -5,15 +5,16 @@ import { PrismaPg } from "@prisma/adapter-pg"
 const globalForPrisma = globalThis as unknown as { prisma: any }
 
 function createPrismaClient() {
-  if (process.env.NODE_ENV === "production") {
-    const client = new PrismaClient({
-      accelerateUrl: process.env.DATABASE_URL!,
-    })
+  const accelerateUrl = process.env.DATABASE_URL
+
+  if (accelerateUrl && accelerateUrl.startsWith("prisma+postgres")) {
+    const client = new PrismaClient({ accelerateUrl })
     return client.$extends(withAccelerate()) as any
   }
 
   const adapter = new PrismaPg({
-    connectionString: "postgres://postgres:postgres@localhost:51214/template1?sslmode=disable"
+    connectionString: process.env.DIRECT_URL || 
+      "postgres://postgres:postgres@localhost:51214/template1?sslmode=disable"
   })
   return new PrismaClient({ adapter })
 }
