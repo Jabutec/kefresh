@@ -1,12 +1,5 @@
 import { NextResponse } from "next/server"
-import { PrismaClient } from "../../../generated/prisma/client"
-import { PrismaPg } from "@prisma/adapter-pg"
-
-const adapter = new PrismaPg({
-  connectionString: "postgres://postgres:postgres@localhost:51214/template1?sslmode=disable"
-})
-
-const prisma = new PrismaClient({ adapter })
+import { prisma } from "../../../../lib/prisma"
 
 export async function GET(
   request: Request,
@@ -14,6 +7,7 @@ export async function GET(
 ) {
   try {
     const { id } = await context.params
+    console.log("Fetching salon with id:", id)
 
     const salon = await prisma.salon.findUnique({
       where: { id },

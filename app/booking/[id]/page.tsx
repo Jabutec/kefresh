@@ -50,10 +50,11 @@ export default function BookingPage() {
       const data = await res.json()
 
       if (res.ok) {
-        router.push("/confirmation")
-      }
+  router.push(`/confirmation?salon=${salon.name}&service=${selectedService.name}&date=March ${selectedDate}&time=${selectedTime}`)
+}
     } catch (error) {
       console.error("Booking error:", error)
+      alert("Booking failed: " + error)
     } finally {
       setLoading(false)
     }

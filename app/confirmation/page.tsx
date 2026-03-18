@@ -1,9 +1,20 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 export default function ConfirmationPage() {
   const [saved, setSaved] = useState(false)
+  const [bookingDetails, setBookingDetails] = useState<any>(null)
+
+useEffect(() => {
+  const params = new URLSearchParams(window.location.search)
+  setBookingDetails({
+    salon: params.get("salon"),
+    service: params.get("service"),
+    date: params.get("date"),
+    time: params.get("time"),
+  })
+}, [])
 
   return (
     <main className="min-h-screen bg-[#fdf6f0] flex flex-col items-center justify-center px-6">
@@ -18,23 +29,19 @@ export default function ConfirmationPage() {
       <div className="w-full max-w-sm bg-white rounded-2xl border border-[#e8e4df] px-5 py-5 mt-8 flex flex-col gap-3">
         <div className="flex justify-between text-sm">
           <span className="text-[#888780]">salon</span>
-          <span className="text-[#2c2c2a] font-medium">Zola's Natural Hair Studio</span>
+          <span className="text-[#2c2c2a] font-medium">{bookingDetails?.salon}</span>
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-[#888780]">service</span>
-          <span className="text-[#2c2c2a]">Box braids</span>
+          <span className="text-[#2c2c2a]">{bookingDetails?.service}</span>
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-[#888780]">date</span>
-          <span className="text-[#2c2c2a]">Mon, 17 March</span>
+          <span className="text-[#2c2c2a]">{bookingDetails?.date}</span>
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-[#888780]">time</span>
-          <span className="text-[#2c2c2a]">13:00</span>
-        </div>
-        <div className="border-t border-[#e8e4df] pt-3 flex justify-between text-sm">
-          <span className="text-[#888780]">deposit paid</span>
-          <span className="text-[#E8472A] font-semibold">R100 ✓</span>
+          <span className="text-[#2c2c2a]">{bookingDetails?.time}</span>
         </div>
       </div>
 
