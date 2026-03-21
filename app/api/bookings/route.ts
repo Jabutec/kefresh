@@ -1,38 +1,33 @@
 import { NextResponse } from "next/server"
-import { prisma } from "../../../lib/prisma"
+import { supabase } from "../../../lib/supabase"
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const clientId = searchParams.get("clientId")
 
-    const bookings = await prisma.booking.findMany({
-      where: clientId ? { clientId } : {},
-      include: {
-        salon: {
-          select: {
-            name: true,
-            location: true,
-          }
-        },
-        service: {
-          select: {
-            name: true,
-            price: true,
-            duration: true,
-          }
-        }
-      },
-      orderBy: {
-        createdAt: "desc"
-      }
-    })
+    let query = supabase
+      .from("bookings")
+      .select(`
+        *,
+        salons (name, location),
+        services (name, price, duration)
+      `)
+      .order("created_at", { ascending: false })
+
+    if (clientId) {
+      query = query.eq("client_id", clientId)
+    }
+
+    const { data: bookings, error } = await query
+
+    if (error) throw error
 
     return NextResponse.json(bookings)
   } catch (error) {
     console.error("Database error:", error)
     return NextResponse.json(
-      { error: "Failed to fetch bookings", details: String(error) },
+      { error: "Failed to fetch bookings" },
       { status: 500 }
     )
   }
@@ -50,31 +45,24 @@ export async function POST(request: Request) {
       )
     }
 
-    const booking = await prisma.booking.create({
-      data: {
-        clientId,
-        salonId,
-        serviceId,
-        date: new Date(date),
+    const { data: booking, error } = await supabase
+      .from("bookings")
+      .insert([{
+        client_id: clientId,
+        salon_id: salonId,
+        service_id: serviceId,
+        date: new Date(date).toISOString(),
         status: "PENDING",
         deposit: 100,
-      },
-      include: {
-        salon: {
-          select: {
-            name: true,
-            location: true,
-          }
-        },
-        service: {
-          select: {
-            name: true,
-            price: true,
-            duration: true,
-          }
-        }
-      }
-    })
+      }])
+      .select(`
+        *,
+        salons (name, location),
+        services (name, price, duration)
+      `)
+      .single()
+
+    if (error) throw error
 
     return NextResponse.json({
       message: "Booking created successfully",
@@ -84,7 +72,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Booking error:", error)
     return NextResponse.json(
-      { error: "Failed to create booking", details: String(error) },
+      { error: "Failed to create booking" },
       { status: 500 }
     )
   }

@@ -50,11 +50,10 @@ export default function BookingPage() {
       const data = await res.json()
 
       if (res.ok) {
-  router.push(`/confirmation?salon=${salon.name}&service=${selectedService.name}&date=March ${selectedDate}&time=${selectedTime}`)
-}
+        router.push(`/confirmation?salon=${salon.name}&service=${selectedService.name}&date=March ${selectedDate}&time=${selectedTime}`)
+      }
     } catch (error) {
       console.error("Booking error:", error)
-      alert("Booking failed: " + error)
     } finally {
       setLoading(false)
     }
@@ -77,7 +76,6 @@ export default function BookingPage() {
 
       <div className="px-6 pt-6 flex flex-col gap-6">
 
-        {/* Select service */}
         <div>
           <h2 className="text-sm font-medium text-[#2c2c2a] mb-3">select service</h2>
           <div className="flex flex-col gap-2">
@@ -101,7 +99,6 @@ export default function BookingPage() {
           </div>
         </div>
 
-        {/* Pick a date */}
         <div>
           <h2 className="text-sm font-medium text-[#2c2c2a] mb-3">pick a date</h2>
           <div className="flex gap-2 overflow-x-auto pb-1">
@@ -129,7 +126,6 @@ export default function BookingPage() {
           </div>
         </div>
 
-        {/* Pick a time */}
         <div>
           <h2 className="text-sm font-medium text-[#2c2c2a] mb-3">pick a time</h2>
           <div className="grid grid-cols-3 gap-2">
@@ -149,7 +145,6 @@ export default function BookingPage() {
           </div>
         </div>
 
-        {/* Booking summary */}
         <div className="bg-white rounded-2xl border border-[#e8e4df] px-4 py-4">
           <h2 className="text-sm font-medium text-[#2c2c2a] mb-3">booking summary</h2>
           <div className="flex flex-col gap-2">

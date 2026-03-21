@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { prisma } from "../../../../lib/prisma"
+import { supabase } from "../../../../lib/supabase"
 import bcrypt from "bcryptjs"
 
 export async function POST(request: Request) {
@@ -14,9 +14,11 @@ export async function POST(request: Request) {
       )
     }
 
-    const existingUser = await prisma.user.findUnique({
-      where: { email }
-    })
+    const { data: existingUser } = await supabase
+      .from("users")
+      .select("id")
+      .eq("email", email)
+      .single()
 
     if (existingUser) {
       return NextResponse.json(
@@ -27,23 +29,27 @@ export async function POST(request: Request) {
 
     const hashedPassword = await bcrypt.hash(password, 10)
 
-    const user = await prisma.user.create({
-      data: {
-        firstName,
-        lastName,
+    const { data: user, error } = await supabase
+      .from("users")
+      .insert([{
+        first_name: firstName,
+        last_name: lastName,
         email,
         phone,
         password: hashedPassword,
         role: role === "pro" ? "PRO" : "CLIENT",
-      }
-    })
+      }])
+      .select()
+      .single()
+
+    if (error) throw error
 
     return NextResponse.json({
       message: "Account created successfully",
       user: {
         id: user.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
+        firstName: user.first_name,
+        lastName: user.last_name,
         email: user.email,
         role: user.role,
       }
@@ -52,7 +58,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Signup error:", error)
     return NextResponse.json(
-      { error: "Failed to create account", details: String(error) },
+      { error: "Failed to create account" },
       { status: 500 }
     )
   }

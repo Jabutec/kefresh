@@ -32,9 +32,8 @@ export default function SalonPage() {
     </main>
   )
 
-  const hairTypes = salon.hairTypes || []
+  const hairTypes = salon.hair_types || []
   const services = salon.services || []
-  const cards = salon.cards || []
 
   return (
     <main className="min-h-screen bg-[#fdf6f0] pb-24">

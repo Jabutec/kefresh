@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { prisma } from "../../../../lib/prisma"
+import { supabase } from "../../../../lib/supabase"
 
 export async function GET(
   request: Request,
@@ -7,21 +7,18 @@ export async function GET(
 ) {
   try {
     const { id } = await context.params
-    console.log("Fetching salon with id:", id)
 
-    const salon = await prisma.salon.findUnique({
-      where: { id },
-      include: {
-        services: true,
-        cards: true,
-        owner: {
-          select: {
-            firstName: true,
-            lastName: true,
-          }
-        }
-      }
-    })
+    const { data: salon, error } = await supabase
+      .from("salons")
+      .select(`
+        *,
+        services (*),
+        cards (*)
+      `)
+      .eq("id", id)
+      .single()
+
+    if (error) throw error
 
     if (!salon) {
       return NextResponse.json(
@@ -34,7 +31,7 @@ export async function GET(
   } catch (error) {
     console.error("Database error:", error)
     return NextResponse.json(
-      { error: "Failed to fetch salon", details: String(error) },
+      { error: "Failed to fetch salon" },
       { status: 500 }
     )
   }

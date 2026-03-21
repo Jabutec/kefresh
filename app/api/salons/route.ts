@@ -1,32 +1,23 @@
 import { NextResponse } from "next/server"
-import { PrismaClient } from "../../generated/prisma/client"
-import { PrismaPg } from "@prisma/adapter-pg"
-
-const adapter = new PrismaPg({
-  connectionString: "postgres://postgres:postgres@localhost:51214/template1?sslmode=disable"
-})
-
-const prisma = new PrismaClient({ adapter })
+import { supabase } from "../../../lib/supabase"
 
 export async function GET() {
   try {
-    const salons = await prisma.salon.findMany({
-      include: {
-        services: true,
-        cards: true,
-        owner: {
-          select: {
-            firstName: true,
-            lastName: true,
-          }
-        }
-      }
-    })
+    const { data: salons, error } = await supabase
+      .from("salons")
+      .select(`
+        *,
+        services (*),
+        cards (*)
+      `)
+
+    if (error) throw error
+
     return NextResponse.json(salons)
   } catch (error) {
     console.error("Database error:", error)
     return NextResponse.json(
-      { error: "Failed to fetch salons", details: String(error) },
+      { error: "Failed to fetch salons" },
       { status: 500 }
     )
   }
@@ -35,20 +26,25 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const salon = await prisma.salon.create({
-      data: {
+    const { data: salon, error } = await supabase
+      .from("salons")
+      .insert([{
         name: body.name,
         location: body.location,
         specialty: body.specialty,
-        hairTypes: body.hairTypes,
-        ownerId: body.ownerId,
-      }
-    })
+        hair_types: body.hairTypes,
+        owner_id: body.ownerId,
+      }])
+      .select()
+      .single()
+
+    if (error) throw error
+
     return NextResponse.json(salon)
   } catch (error) {
     console.error("Database error:", error)
     return NextResponse.json(
-      { error: "Failed to create salon", details: String(error) },
+      { error: "Failed to create salon" },
       { status: 500 }
     )
   }
