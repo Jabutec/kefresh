@@ -114,6 +114,41 @@ export default function DashboardPage() {
     }
   }
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0]
+  if (!file) return
+
+  const formData = new FormData()
+  formData.append("file", file)
+  formData.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!)
+
+  try {
+    const res = await fetch(
+      `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
+      { method: "POST", body: formData }
+    )
+    const data = await res.json()
+
+    const cardRes = await fetch("/api/dashboard/cards", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        imageUrl: data.secure_url,
+        style: file.name.split(".")[0],
+        category: salon.specialty,
+        salonId: salon.id,
+      })
+    })
+
+    const card = await cardRes.json()
+    if (cardRes.ok) {
+      setSalon({ ...salon, cards: [...(salon.cards || []), card] })
+    }
+  } catch (error) {
+    console.error("Upload error:", error)
+  }
+}
+
   if (loading) return (
     <main className="min-h-screen bg-[#fdf6f0] flex items-center justify-center">
       <p className="text-sm text-[#888780]">loading dashboard...</p>
@@ -349,21 +384,38 @@ export default function DashboardPage() {
             )}
 
             {activeTab === "portfolio" && (
-              <div className="bg-white rounded-2xl border border-[#e8e4df] p-6">
-                <h2 className="text-sm font-medium text-[#2c2c2a] mb-4">your portfolio</h2>
-                {salon.cards?.length === 0 ? (
-                  <p className="text-sm text-[#888780]">no portfolio cards yet — add photos of your work</p>
-                ) : (
-                  <div className="grid grid-cols-3 gap-3">
-                    {salon.cards.map((card: any) => (
-                      <div key={card.id} className="bg-[#FEF2EF] rounded-2xl h-32 flex items-center justify-center">
-                        <p className="text-xs text-[#888780]">{card.style}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+  <div className="bg-white rounded-2xl border border-[#e8e4df] p-6">
+    <div className="flex justify-between items-center mb-4">
+      <h2 className="text-sm font-medium text-[#2c2c2a]">your portfolio</h2>
+      <label className="text-sm bg-[#E8472A] text-white px-4 py-2 rounded-2xl hover:bg-[#D63D22] transition-colors cursor-pointer">
+        + add photo
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleImageUpload}
+          className="hidden"
+        />
+      </label>
+    </div>
+
+    {(salon.cards || []).length === 0 ? (
+      <p className="text-sm text-[#888780]">no portfolio cards yet — add photos of your work</p>
+    ) : (
+      <div className="columns-3 gap-3">
+        {salon.cards.map((card: any) => (
+          <div key={card.id} className="break-inside-avoid mb-3">
+            <img
+              src={card.image_url}
+              alt={card.style}
+              className="w-full rounded-2xl object-cover"
+            />
+            <p className="text-xs text-[#888780] mt-1 px-1">{card.style}</p>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+)}
 
             {activeTab === "bookings" && (
               <div className="bg-white rounded-2xl border border-[#e8e4df] p-6">
