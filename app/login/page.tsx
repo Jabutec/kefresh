@@ -38,7 +38,11 @@ export default function LoginPage() {
       }
 
       localStorage.setItem("kefresh_user", JSON.stringify(data.user))
-      router.push("/")
+      if (data.user.role === "PRO") {
+        router.push("/dashboard")
+      } else {
+        router.push("/")
+      }
 
     } catch (err) {
       setError("Something went wrong. Please try again.")

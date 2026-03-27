@@ -9,6 +9,23 @@ export default function DashboardPage() {
   const [salon, setSalon] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("overview")
+  const [saving, setSaving] = useState(false)
+  const [showServiceForm, setShowServiceForm] = useState(false)
+  const [addingService, setAddingService] = useState(false)
+
+  const [form, setForm] = useState({
+    name: "",
+    description: "",
+    location: "",
+    specialty: "",
+    hairTypes: "",
+  })
+
+  const [serviceForm, setServiceForm] = useState({
+    name: "",
+    price: "",
+    duration: "",
+  })
 
   useEffect(() => {
     const stored = localStorage.getItem("kefresh_user")
@@ -32,6 +49,71 @@ export default function DashboardPage() {
     setLoading(false)
   }
 
+  const handleCreateSalon = async () => {
+    setSaving(true)
+    try {
+      const res = await fetch("/api/dashboard/salon", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: form.name,
+          description: form.description,
+          location: form.location,
+          specialty: form.specialty,
+          hairTypes: form.hairTypes.split(",").map((t: string) => t.trim()),
+          ownerId: user.id,
+        })
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setSalon(data)
+        setActiveTab("overview")
+      }
+    } catch (error) {
+      console.error("Error creating salon:", error)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleAddService = async () => {
+    setAddingService(true)
+    try {
+      const res = await fetch("/api/dashboard/services", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: serviceForm.name,
+          price: serviceForm.price,
+          duration: serviceForm.duration,
+          salonId: salon.id,
+        })
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setSalon({ ...salon, services: [...(salon.services || []), data] })
+        setServiceForm({ name: "", price: "", duration: "" })
+        setShowServiceForm(false)
+      }
+    } catch (error) {
+      console.error("Error adding service:", error)
+    } finally {
+      setAddingService(false)
+    }
+  }
+
+  const handleDeleteService = async (serviceId: string) => {
+    const res = await fetch(`/api/dashboard/services?id=${serviceId}`, {
+      method: "DELETE"
+    })
+    if (res.ok) {
+      setSalon({
+        ...salon,
+        services: salon.services.filter((s: any) => s.id !== serviceId)
+      })
+    }
+  }
+
   if (loading) return (
     <main className="min-h-screen bg-[#fdf6f0] flex items-center justify-center">
       <p className="text-sm text-[#888780]">loading dashboard...</p>
@@ -41,7 +123,6 @@ export default function DashboardPage() {
   return (
     <main className="min-h-screen bg-[#fdf6f0]">
 
-      {/* Navbar */}
       <nav className="bg-white border-b border-[#e8e4df] px-8 py-4 flex items-center justify-between">
         <a href="/" className="text-2xl font-semibold text-[#2c2c2a]">
           ke<span className="text-[#E8472A]">fresh</span>
@@ -63,7 +144,6 @@ export default function DashboardPage() {
 
       <div className="max-w-5xl mx-auto px-8 py-8">
 
-        {/* Header */}
         <div className="mb-8">
           <h1 className="text-2xl font-semibold text-[#2c2c2a]">
             {salon ? salon.name : "welcome to your dashboard"}
@@ -73,27 +153,73 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        {/* No salon yet */}
         {!salon && (
-          <div className="bg-white rounded-2xl border border-[#e8e4df] p-8 text-center">
-            <p className="text-2xl mb-4">✂️</p>
-            <h2 className="text-lg font-semibold text-[#2c2c2a] mb-2">set up your salon</h2>
-            <p className="text-sm text-[#888780] mb-6">
-              create your salon profile to start appearing in the KeFresh feed
-            </p>
-            <button
-              onClick={() => setActiveTab("setup")}
-              className="bg-[#E8472A] text-white px-6 py-3 rounded-2xl text-sm font-medium hover:bg-[#D63D22] transition-colors"
-            >
-              create salon profile
-            </button>
+          <div className="bg-white rounded-2xl border border-[#e8e4df] p-8">
+            {activeTab !== "setup" ? (
+              <div className="text-center">
+                <p className="text-2xl mb-4">✂️</p>
+                <h2 className="text-lg font-semibold text-[#2c2c2a] mb-2">set up your salon</h2>
+                <p className="text-sm text-[#888780] mb-6">
+                  create your salon profile to start appearing in the KeFresh feed
+                </p>
+                <button
+                  onClick={() => setActiveTab("setup")}
+                  className="bg-[#E8472A] text-white px-6 py-3 rounded-2xl text-sm font-medium hover:bg-[#D63D22] transition-colors"
+                >
+                  create salon profile
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-4 max-w-lg">
+                <h2 className="text-lg font-semibold text-[#2c2c2a]">create your salon profile</h2>
+                <input
+                  type="text"
+                  placeholder="salon name"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  className="w-full px-4 py-3 rounded-2xl border border-[#e8e4df] bg-[#fdf6f0] text-sm text-[#2c2c2a] placeholder-[#b4b2a9] focus:outline-none focus:border-[#E8472A]"
+                />
+                <input
+                  type="text"
+                  placeholder="location (e.g. Sandton, Johannesburg)"
+                  value={form.location}
+                  onChange={(e) => setForm({ ...form, location: e.target.value })}
+                  className="w-full px-4 py-3 rounded-2xl border border-[#e8e4df] bg-[#fdf6f0] text-sm text-[#2c2c2a] placeholder-[#b4b2a9] focus:outline-none focus:border-[#E8472A]"
+                />
+                <input
+                  type="text"
+                  placeholder="specialty (e.g. 4C natural hair, Barber)"
+                  value={form.specialty}
+                  onChange={(e) => setForm({ ...form, specialty: e.target.value })}
+                  className="w-full px-4 py-3 rounded-2xl border border-[#e8e4df] bg-[#fdf6f0] text-sm text-[#2c2c2a] placeholder-[#b4b2a9] focus:outline-none focus:border-[#E8472A]"
+                />
+                <input
+                  type="text"
+                  placeholder="hair types (comma separated e.g. 4C, locs, braids)"
+                  value={form.hairTypes}
+                  onChange={(e) => setForm({ ...form, hairTypes: e.target.value })}
+                  className="w-full px-4 py-3 rounded-2xl border border-[#e8e4df] bg-[#fdf6f0] text-sm text-[#2c2c2a] placeholder-[#b4b2a9] focus:outline-none focus:border-[#E8472A]"
+                />
+                <textarea
+                  placeholder="describe your salon..."
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  className="w-full px-4 py-3 rounded-2xl border border-[#e8e4df] bg-[#fdf6f0] text-sm text-[#2c2c2a] placeholder-[#b4b2a9] focus:outline-none focus:border-[#E8472A] h-24 resize-none"
+                />
+                <button
+                  onClick={handleCreateSalon}
+                  disabled={saving}
+                  className="w-full bg-[#E8472A] text-white py-3 rounded-2xl text-sm font-medium hover:bg-[#D63D22] transition-colors disabled:opacity-50"
+                >
+                  {saving ? "creating..." : "create salon profile"}
+                </button>
+              </div>
+            )}
           </div>
         )}
 
-        {/* Salon exists — show tabs */}
         {salon && (
           <>
-            {/* Stats */}
             <div className="grid grid-cols-3 gap-4 mb-8">
               <div className="bg-white rounded-2xl border border-[#e8e4df] p-5">
                 <p className="text-xs text-[#888780] mb-1">total bookings</p>
@@ -109,7 +235,6 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Tabs */}
             <div className="flex gap-2 mb-6">
               {["overview", "services", "portfolio", "bookings"].map((tab) => (
                 <button
@@ -126,7 +251,6 @@ export default function DashboardPage() {
               ))}
             </div>
 
-            {/* Overview tab */}
             {activeTab === "overview" && (
               <div className="bg-white rounded-2xl border border-[#e8e4df] p-6">
                 <h2 className="text-sm font-medium text-[#2c2c2a] mb-4">salon details</h2>
@@ -151,25 +275,79 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {/* Services tab */}
             {activeTab === "services" && (
               <div className="bg-white rounded-2xl border border-[#e8e4df] p-6">
-                <h2 className="text-sm font-medium text-[#2c2c2a] mb-4">your services</h2>
-                <div className="flex flex-col gap-3">
-                  {(salon.services || []).map((service: any) => (
-                    <div key={service.id} className="flex justify-between items-center py-3 border-b border-[#e8e4df] last:border-0">
-                      <div>
-                        <p className="text-sm text-[#2c2c2a]">{service.name}</p>
-                        <p className="text-xs text-[#888780]">{service.duration} mins</p>
-                      </div>
-                      <p className="text-sm font-medium text-[#E8472A]">R{service.price}</p>
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-sm font-medium text-[#2c2c2a]">your services</h2>
+                  <button
+                    onClick={() => setShowServiceForm(!showServiceForm)}
+                    className="text-sm bg-[#E8472A] text-white px-4 py-2 rounded-2xl hover:bg-[#D63D22] transition-colors"
+                  >
+                    + add service
+                  </button>
+                </div>
+
+                {showServiceForm && (
+                  <div className="flex flex-col gap-3 mb-6 p-4 bg-[#fdf6f0] rounded-2xl">
+                    <input
+                      type="text"
+                      placeholder="service name (e.g. Box braids)"
+                      value={serviceForm.name}
+                      onChange={(e) => setServiceForm({ ...serviceForm, name: e.target.value })}
+                      className="w-full px-4 py-3 rounded-2xl border border-[#e8e4df] bg-white text-sm text-[#2c2c2a] placeholder-[#b4b2a9] focus:outline-none focus:border-[#E8472A]"
+                    />
+                    <div className="flex gap-3">
+                      <input
+                        type="number"
+                        placeholder="price (R)"
+                        value={serviceForm.price}
+                        onChange={(e) => setServiceForm({ ...serviceForm, price: e.target.value })}
+                        className="flex-1 px-4 py-3 rounded-2xl border border-[#e8e4df] bg-white text-sm text-[#2c2c2a] placeholder-[#b4b2a9] focus:outline-none focus:border-[#E8472A]"
+                      />
+                      <input
+                        type="number"
+                        placeholder="duration (mins)"
+                        value={serviceForm.duration}
+                        onChange={(e) => setServiceForm({ ...serviceForm, duration: e.target.value })}
+                        className="flex-1 px-4 py-3 rounded-2xl border border-[#e8e4df] bg-white text-sm text-[#2c2c2a] placeholder-[#b4b2a9] focus:outline-none focus:border-[#E8472A]"
+                      />
                     </div>
-                  ))}
+                    <button
+                      onClick={handleAddService}
+                      disabled={addingService}
+                      className="w-full bg-[#E8472A] text-white py-3 rounded-2xl text-sm font-medium hover:bg-[#D63D22] transition-colors disabled:opacity-50"
+                    >
+                      {addingService ? "adding..." : "add service"}
+                    </button>
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-3">
+                  {(salon.services || []).length === 0 ? (
+                    <p className="text-sm text-[#888780]">no services yet — add your first service</p>
+                  ) : (
+                    (salon.services || []).map((service: any) => (
+                      <div key={service.id} className="flex justify-between items-center py-3 border-b border-[#e8e4df] last:border-0">
+                        <div>
+                          <p className="text-sm text-[#2c2c2a]">{service.name}</p>
+                          <p className="text-xs text-[#888780]">{service.duration} mins</p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <p className="text-sm font-medium text-[#E8472A]">R{service.price}</p>
+                          <button
+                            onClick={() => handleDeleteService(service.id)}
+                            className="text-xs text-[#888780] hover:text-red-500 transition-colors"
+                          >
+                            remove
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             )}
 
-            {/* Portfolio tab */}
             {activeTab === "portfolio" && (
               <div className="bg-white rounded-2xl border border-[#e8e4df] p-6">
                 <h2 className="text-sm font-medium text-[#2c2c2a] mb-4">your portfolio</h2>
@@ -187,7 +365,6 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {/* Bookings tab */}
             {activeTab === "bookings" && (
               <div className="bg-white rounded-2xl border border-[#e8e4df] p-6">
                 <h2 className="text-sm font-medium text-[#2c2c2a] mb-4">upcoming bookings</h2>
