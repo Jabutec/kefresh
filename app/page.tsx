@@ -122,18 +122,39 @@ export default function Home() {
           {salons.length === 0 ? (
             <p className="text-sm text-[#888780]">loading salons...</p>
           ) : (
-            salons.map((salon) => (
-              <a key={salon.id} href={`/salon/${salon.id}`} className="break-inside-avoid mb-4 block">
-                <div className="bg-white rounded-2xl overflow-hidden border border-[#e8e4df] hover:border-[#E8472A] transition-colors cursor-pointer">
-                  <div className="h-48 bg-[#FEF2EF]" />
-                  <div className="p-3">
-                    <p className="text-sm font-medium text-[#2c2c2a]">{salon.name}</p>
-                    <p className="text-xs text-[#888780] mt-1">{salon.specialty} · {salon.location}</p>
-                    <p className="text-xs text-[#E8472A] mt-2 font-medium">from R{salon.services[0]?.price ?? "—"}</p>
-                  </div>
-                </div>
-              </a>
-            ))
+            salons.flatMap((salon: any) =>
+  salon.cards && salon.cards.length > 0
+    ? salon.cards.map((card: any) => (
+        <a key={card.id} href={`/salon/${salon.id}`} className="break-inside-avoid mb-4 block">
+          <div className="bg-white rounded-2xl overflow-hidden border border-[#e8e4df] hover:border-[#E8472A] transition-colors cursor-pointer">
+            <img
+              src={card.image_url}
+              alt={card.style}
+              className="w-full object-cover"
+            />
+            <div className="p-3">
+              <p className="text-sm font-medium text-[#2c2c2a]">{card.style}</p>
+              <p className="text-xs text-[#888780] mt-1">{salon.name} · {salon.location}</p>
+              <p className="text-xs text-[#E8472A] mt-2 font-medium">
+                {card.price ? `R${card.price}` : `from R${salon.services?.[0]?.price ?? "—"}`}
+              </p>
+            </div>
+          </div>
+        </a>
+      ))
+    : [
+        <a key={salon.id} href={`/salon/${salon.id}`} className="break-inside-avoid mb-4 block">
+          <div className="bg-white rounded-2xl overflow-hidden border border-[#e8e4df] hover:border-[#E8472A] transition-colors cursor-pointer">
+            <div className="h-48 bg-[#FEF2EF]" />
+            <div className="p-3">
+              <p className="text-sm font-medium text-[#2c2c2a]">{salon.name}</p>
+              <p className="text-xs text-[#888780] mt-1">{salon.specialty} · {salon.location}</p>
+              <p className="text-xs text-[#E8472A] mt-2 font-medium">from R{salon.services?.[0]?.price ?? "—"}</p>
+            </div>
+          </div>
+        </a>
+      ]
+)
           )}
         </div>
       </div>

@@ -12,6 +12,9 @@ export default function DashboardPage() {
   const [saving, setSaving] = useState(false)
   const [showServiceForm, setShowServiceForm] = useState(false)
   const [addingService, setAddingService] = useState(false)
+  const [uploadingCard, setUploadingCard] = useState(false)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
   const [form, setForm] = useState({
     name: "",
@@ -23,6 +26,12 @@ export default function DashboardPage() {
 
   const [serviceForm, setServiceForm] = useState({
     name: "",
+    price: "",
+    duration: "",
+  })
+
+  const [cardForm, setCardForm] = useState({
+    style: "",
     price: "",
     duration: "",
   })
@@ -103,51 +112,65 @@ export default function DashboardPage() {
   }
 
   const handleDeleteService = async (serviceId: string) => {
-    const res = await fetch(`/api/dashboard/services?id=${serviceId}`, {
-      method: "DELETE"
-    })
+    const res = await fetch(`/api/dashboard/services?id=${serviceId}`, { method: "DELETE" })
     if (res.ok) {
-      setSalon({
-        ...salon,
-        services: salon.services.filter((s: any) => s.id !== serviceId)
-      })
+      setSalon({ ...salon, services: salon.services.filter((s: any) => s.id !== serviceId) })
     }
   }
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-  const file = e.target.files?.[0]
-  if (!file) return
-
-  const formData = new FormData()
-  formData.append("file", file)
-  formData.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!)
-
-  try {
-    const res = await fetch(
-      `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
-      { method: "POST", body: formData }
-    )
-    const data = await res.json()
-
-    const cardRes = await fetch("/api/dashboard/cards", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        imageUrl: data.secure_url,
-        style: file.name.split(".")[0],
-        category: salon.specialty,
-        salonId: salon.id,
-      })
-    })
-
-    const card = await cardRes.json()
-    if (cardRes.ok) {
-      setSalon({ ...salon, cards: [...(salon.cards || []), card] })
-    }
-  } catch (error) {
-    console.error("Upload error:", error)
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setSelectedFile(file)
+    setPreviewUrl(URL.createObjectURL(file))
   }
-}
+
+  const handleImageUpload = async () => {
+    if (!selectedFile) return
+    setUploadingCard(true)
+    try {
+      const formData = new FormData()
+      formData.append("file", selectedFile)
+      formData.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!)
+
+      const cloudRes = await fetch(
+        `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
+        { method: "POST", body: formData }
+      )
+      const cloudData = await cloudRes.json()
+
+      const cardRes = await fetch("/api/dashboard/cards", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          imageUrl: cloudData.secure_url,
+          style: cardForm.style,
+          category: salon.specialty,
+          salonId: salon.id,
+          price: cardForm.price ? parseInt(cardForm.price) : null,
+          duration: cardForm.duration ? parseInt(cardForm.duration) : null,
+        })
+      })
+      const card = await cardRes.json()
+      if (cardRes.ok) {
+        setSalon({ ...salon, cards: [...(salon.cards || []), card] })
+        setSelectedFile(null)
+        setPreviewUrl(null)
+        setCardForm({ style: "", price: "", duration: "" })
+      }
+    } catch (error) {
+      console.error("Upload error:", error)
+    } finally {
+      setUploadingCard(false)
+    }
+  }
+
+  const handleDeleteCard = async (cardId: string) => {
+    const res = await fetch(`/api/dashboard/cards?id=${cardId}`, { method: "DELETE" })
+    if (res.ok) {
+      setSalon({ ...salon, cards: salon.cards.filter((c: any) => c.id !== cardId) })
+    }
+  }
 
   if (loading) return (
     <main className="min-h-screen bg-[#fdf6f0] flex items-center justify-center">
@@ -207,45 +230,23 @@ export default function DashboardPage() {
             ) : (
               <div className="flex flex-col gap-4 max-w-lg">
                 <h2 className="text-lg font-semibold text-[#2c2c2a]">create your salon profile</h2>
-                <input
-                  type="text"
-                  placeholder="salon name"
-                  value={form.name}
+                <input type="text" placeholder="salon name" value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="w-full px-4 py-3 rounded-2xl border border-[#e8e4df] bg-[#fdf6f0] text-sm text-[#2c2c2a] placeholder-[#b4b2a9] focus:outline-none focus:border-[#E8472A]"
-                />
-                <input
-                  type="text"
-                  placeholder="location (e.g. Sandton, Johannesburg)"
-                  value={form.location}
+                  className="w-full px-4 py-3 rounded-2xl border border-[#e8e4df] bg-[#fdf6f0] text-sm text-[#2c2c2a] placeholder-[#b4b2a9] focus:outline-none focus:border-[#E8472A]" />
+                <input type="text" placeholder="location (e.g. Sandton, Johannesburg)" value={form.location}
                   onChange={(e) => setForm({ ...form, location: e.target.value })}
-                  className="w-full px-4 py-3 rounded-2xl border border-[#e8e4df] bg-[#fdf6f0] text-sm text-[#2c2c2a] placeholder-[#b4b2a9] focus:outline-none focus:border-[#E8472A]"
-                />
-                <input
-                  type="text"
-                  placeholder="specialty (e.g. 4C natural hair, Barber)"
-                  value={form.specialty}
+                  className="w-full px-4 py-3 rounded-2xl border border-[#e8e4df] bg-[#fdf6f0] text-sm text-[#2c2c2a] placeholder-[#b4b2a9] focus:outline-none focus:border-[#E8472A]" />
+                <input type="text" placeholder="specialty (e.g. 4C natural hair, Barber)" value={form.specialty}
                   onChange={(e) => setForm({ ...form, specialty: e.target.value })}
-                  className="w-full px-4 py-3 rounded-2xl border border-[#e8e4df] bg-[#fdf6f0] text-sm text-[#2c2c2a] placeholder-[#b4b2a9] focus:outline-none focus:border-[#E8472A]"
-                />
-                <input
-                  type="text"
-                  placeholder="hair types (comma separated e.g. 4C, locs, braids)"
-                  value={form.hairTypes}
+                  className="w-full px-4 py-3 rounded-2xl border border-[#e8e4df] bg-[#fdf6f0] text-sm text-[#2c2c2a] placeholder-[#b4b2a9] focus:outline-none focus:border-[#E8472A]" />
+                <input type="text" placeholder="hair types (comma separated e.g. 4C, locs, braids)" value={form.hairTypes}
                   onChange={(e) => setForm({ ...form, hairTypes: e.target.value })}
-                  className="w-full px-4 py-3 rounded-2xl border border-[#e8e4df] bg-[#fdf6f0] text-sm text-[#2c2c2a] placeholder-[#b4b2a9] focus:outline-none focus:border-[#E8472A]"
-                />
-                <textarea
-                  placeholder="describe your salon..."
-                  value={form.description}
+                  className="w-full px-4 py-3 rounded-2xl border border-[#e8e4df] bg-[#fdf6f0] text-sm text-[#2c2c2a] placeholder-[#b4b2a9] focus:outline-none focus:border-[#E8472A]" />
+                <textarea placeholder="describe your salon..." value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  className="w-full px-4 py-3 rounded-2xl border border-[#e8e4df] bg-[#fdf6f0] text-sm text-[#2c2c2a] placeholder-[#b4b2a9] focus:outline-none focus:border-[#E8472A] h-24 resize-none"
-                />
-                <button
-                  onClick={handleCreateSalon}
-                  disabled={saving}
-                  className="w-full bg-[#E8472A] text-white py-3 rounded-2xl text-sm font-medium hover:bg-[#D63D22] transition-colors disabled:opacity-50"
-                >
+                  className="w-full px-4 py-3 rounded-2xl border border-[#e8e4df] bg-[#fdf6f0] text-sm text-[#2c2c2a] placeholder-[#b4b2a9] focus:outline-none focus:border-[#E8472A] h-24 resize-none" />
+                <button onClick={handleCreateSalon} disabled={saving}
+                  className="w-full bg-[#E8472A] text-white py-3 rounded-2xl text-sm font-medium hover:bg-[#D63D22] transition-colors disabled:opacity-50">
                   {saving ? "creating..." : "create salon profile"}
                 </button>
               </div>
@@ -272,15 +273,10 @@ export default function DashboardPage() {
 
             <div className="flex gap-2 mb-6">
               {["overview", "services", "portfolio", "bookings"].map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
+                <button key={tab} onClick={() => setActiveTab(tab)}
                   className={`px-4 py-2 rounded-2xl text-sm transition-colors ${
-                    activeTab === tab
-                      ? "bg-[#E8472A] text-white"
-                      : "bg-white border border-[#e8e4df] text-[#5f5e5a]"
-                  }`}
-                >
+                    activeTab === tab ? "bg-[#E8472A] text-white" : "bg-white border border-[#e8e4df] text-[#5f5e5a]"
+                  }`}>
                   {tab}
                 </button>
               ))}
@@ -314,49 +310,30 @@ export default function DashboardPage() {
               <div className="bg-white rounded-2xl border border-[#e8e4df] p-6">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-sm font-medium text-[#2c2c2a]">your services</h2>
-                  <button
-                    onClick={() => setShowServiceForm(!showServiceForm)}
-                    className="text-sm bg-[#E8472A] text-white px-4 py-2 rounded-2xl hover:bg-[#D63D22] transition-colors"
-                  >
+                  <button onClick={() => setShowServiceForm(!showServiceForm)}
+                    className="text-sm bg-[#E8472A] text-white px-4 py-2 rounded-2xl hover:bg-[#D63D22] transition-colors">
                     + add service
                   </button>
                 </div>
-
                 {showServiceForm && (
                   <div className="flex flex-col gap-3 mb-6 p-4 bg-[#fdf6f0] rounded-2xl">
-                    <input
-                      type="text"
-                      placeholder="service name (e.g. Box braids)"
-                      value={serviceForm.name}
+                    <input type="text" placeholder="service name (e.g. Box braids)" value={serviceForm.name}
                       onChange={(e) => setServiceForm({ ...serviceForm, name: e.target.value })}
-                      className="w-full px-4 py-3 rounded-2xl border border-[#e8e4df] bg-white text-sm text-[#2c2c2a] placeholder-[#b4b2a9] focus:outline-none focus:border-[#E8472A]"
-                    />
+                      className="w-full px-4 py-3 rounded-2xl border border-[#e8e4df] bg-white text-sm text-[#2c2c2a] placeholder-[#b4b2a9] focus:outline-none focus:border-[#E8472A]" />
                     <div className="flex gap-3">
-                      <input
-                        type="number"
-                        placeholder="price (R)"
-                        value={serviceForm.price}
+                      <input type="number" placeholder="price (R)" value={serviceForm.price}
                         onChange={(e) => setServiceForm({ ...serviceForm, price: e.target.value })}
-                        className="flex-1 px-4 py-3 rounded-2xl border border-[#e8e4df] bg-white text-sm text-[#2c2c2a] placeholder-[#b4b2a9] focus:outline-none focus:border-[#E8472A]"
-                      />
-                      <input
-                        type="number"
-                        placeholder="duration (mins)"
-                        value={serviceForm.duration}
+                        className="flex-1 px-4 py-3 rounded-2xl border border-[#e8e4df] bg-white text-sm text-[#2c2c2a] placeholder-[#b4b2a9] focus:outline-none focus:border-[#E8472A]" />
+                      <input type="number" placeholder="duration (mins)" value={serviceForm.duration}
                         onChange={(e) => setServiceForm({ ...serviceForm, duration: e.target.value })}
-                        className="flex-1 px-4 py-3 rounded-2xl border border-[#e8e4df] bg-white text-sm text-[#2c2c2a] placeholder-[#b4b2a9] focus:outline-none focus:border-[#E8472A]"
-                      />
+                        className="flex-1 px-4 py-3 rounded-2xl border border-[#e8e4df] bg-white text-sm text-[#2c2c2a] placeholder-[#b4b2a9] focus:outline-none focus:border-[#E8472A]" />
                     </div>
-                    <button
-                      onClick={handleAddService}
-                      disabled={addingService}
-                      className="w-full bg-[#E8472A] text-white py-3 rounded-2xl text-sm font-medium hover:bg-[#D63D22] transition-colors disabled:opacity-50"
-                    >
+                    <button onClick={handleAddService} disabled={addingService}
+                      className="w-full bg-[#E8472A] text-white py-3 rounded-2xl text-sm font-medium hover:bg-[#D63D22] transition-colors disabled:opacity-50">
                       {addingService ? "adding..." : "add service"}
                     </button>
                   </div>
                 )}
-
                 <div className="flex flex-col gap-3">
                   {(salon.services || []).length === 0 ? (
                     <p className="text-sm text-[#888780]">no services yet — add your first service</p>
@@ -369,10 +346,8 @@ export default function DashboardPage() {
                         </div>
                         <div className="flex items-center gap-3">
                           <p className="text-sm font-medium text-[#E8472A]">R{service.price}</p>
-                          <button
-                            onClick={() => handleDeleteService(service.id)}
-                            className="text-xs text-[#888780] hover:text-red-500 transition-colors"
-                          >
+                          <button onClick={() => handleDeleteService(service.id)}
+                            className="text-xs text-[#888780] hover:text-red-500 transition-colors">
                             remove
                           </button>
                         </div>
@@ -384,38 +359,64 @@ export default function DashboardPage() {
             )}
 
             {activeTab === "portfolio" && (
-  <div className="bg-white rounded-2xl border border-[#e8e4df] p-6">
-    <div className="flex justify-between items-center mb-4">
-      <h2 className="text-sm font-medium text-[#2c2c2a]">your portfolio</h2>
-      <label className="text-sm bg-[#E8472A] text-white px-4 py-2 rounded-2xl hover:bg-[#D63D22] transition-colors cursor-pointer">
-        + add photo
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleImageUpload}
-          className="hidden"
-        />
-      </label>
-    </div>
-
-    {(salon.cards || []).length === 0 ? (
-      <p className="text-sm text-[#888780]">no portfolio cards yet — add photos of your work</p>
-    ) : (
-      <div className="columns-3 gap-3">
-        {salon.cards.map((card: any) => (
-          <div key={card.id} className="break-inside-avoid mb-3">
-            <img
-              src={card.image_url}
-              alt={card.style}
-              className="w-full rounded-2xl object-cover"
-            />
-            <p className="text-xs text-[#888780] mt-1 px-1">{card.style}</p>
-          </div>
-        ))}
-      </div>
-    )}
-  </div>
-)}
+              <div className="bg-white rounded-2xl border border-[#e8e4df] p-6">
+                <h2 className="text-sm font-medium text-[#2c2c2a] mb-4">your portfolio</h2>
+                <div className="bg-[#fdf6f0] rounded-2xl p-4 mb-6">
+                  <h3 className="text-sm font-medium text-[#2c2c2a] mb-3">add a new look</h3>
+                  {!previewUrl ? (
+                    <label className="flex flex-col items-center justify-center h-40 border-2 border-dashed border-[#e8e4df] rounded-2xl cursor-pointer hover:border-[#E8472A] transition-colors">
+                      <span className="text-2xl mb-2">📸</span>
+                      <span className="text-sm text-[#888780]">tap to upload a photo</span>
+                      <input type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
+                    </label>
+                  ) : (
+                    <div className="flex flex-col gap-3">
+                      <div className="relative">
+                        <img src={previewUrl} alt="preview" className="w-full h-48 object-cover rounded-2xl" />
+                        <button onClick={() => { setPreviewUrl(null); setSelectedFile(null) }}
+                          className="absolute top-2 right-2 bg-white rounded-full w-6 h-6 flex items-center justify-center text-xs text-[#888780]">
+                          ✕
+                        </button>
+                      </div>
+                      <input type="text" placeholder="style name (e.g. Box braids, Wolf cut)" value={cardForm.style}
+                        onChange={(e) => setCardForm({ ...cardForm, style: e.target.value })}
+                        className="w-full px-4 py-3 rounded-2xl border border-[#e8e4df] bg-white text-sm text-[#2c2c2a] placeholder-[#b4b2a9] focus:outline-none focus:border-[#E8472A]" />
+                      <div className="flex gap-3">
+                        <input type="number" placeholder="price (R)" value={cardForm.price}
+                          onChange={(e) => setCardForm({ ...cardForm, price: e.target.value })}
+                          className="flex-1 px-4 py-3 rounded-2xl border border-[#e8e4df] bg-white text-sm text-[#2c2c2a] placeholder-[#b4b2a9] focus:outline-none focus:border-[#E8472A]" />
+                        <input type="number" placeholder="duration (mins)" value={cardForm.duration}
+                          onChange={(e) => setCardForm({ ...cardForm, duration: e.target.value })}
+                          className="flex-1 px-4 py-3 rounded-2xl border border-[#e8e4df] bg-white text-sm text-[#2c2c2a] placeholder-[#b4b2a9] focus:outline-none focus:border-[#E8472A]" />
+                      </div>
+                      <button onClick={handleImageUpload} disabled={uploadingCard || !cardForm.style}
+                        className="w-full bg-[#E8472A] text-white py-3 rounded-2xl text-sm font-medium hover:bg-[#D63D22] transition-colors disabled:opacity-50">
+                        {uploadingCard ? "uploading..." : "post this look"}
+                      </button>
+                    </div>
+                  )}
+                </div>
+                {(salon.cards || []).length === 0 ? (
+                  <p className="text-sm text-[#888780]">no portfolio cards yet — upload your first look!</p>
+                ) : (
+                  <div className="columns-2 md:columns-3 gap-3">
+                    {salon.cards.map((card: any) => (
+                      <div key={card.id} className="break-inside-avoid mb-3 relative group">
+                        <img src={card.image_url} alt={card.style} className="w-full rounded-2xl object-cover" />
+                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent rounded-b-2xl p-3">
+                          <p className="text-white text-xs font-medium">{card.style}</p>
+                          {card.price && <p className="text-white text-xs opacity-80">R{card.price}</p>}
+                        </div>
+                        <button onClick={() => handleDeleteCard(card.id)}
+                          className="absolute top-2 right-2 bg-white rounded-full w-6 h-6 items-center justify-center text-xs text-[#888780] hidden group-hover:flex">
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {activeTab === "bookings" && (
               <div className="bg-white rounded-2xl border border-[#e8e4df] p-6">
