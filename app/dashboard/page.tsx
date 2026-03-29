@@ -15,6 +15,7 @@ export default function DashboardPage() {
   const [uploadingCard, setUploadingCard] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [bookings, setBookings] = useState<any[]>([])
 
   const [form, setForm] = useState({
     name: "",
@@ -52,11 +53,12 @@ export default function DashboardPage() {
   }, [])
 
   const fetchSalon = async (ownerId: string) => {
-    const res = await fetch(`/api/dashboard/salon?ownerId=${ownerId}`)
-    const data = await res.json()
-    setSalon(data)
-    setLoading(false)
-  }
+  const res = await fetch(`/api/dashboard/salon?ownerId=${ownerId}`)
+  const data = await res.json()
+  setSalon(data)
+  if (data?.id) fetchBookings(data.id)
+  setLoading(false)
+}
 
   const handleCreateSalon = async () => {
     setSaving(true)
@@ -172,6 +174,28 @@ export default function DashboardPage() {
     }
   }
 
+  
+
+  const fetchBookings = async (salonId: string) => {
+  const res = await fetch(`/api/dashboard/bookings?salonId=${salonId}`)
+  const data = await res.json()
+  if (Array.isArray(data)) setBookings(data)
+}
+
+const handleUpdateBooking = async (bookingId: string, status: string) => {
+  const res = await fetch("/api/dashboard/bookings", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ bookingId, status })
+  })
+  if (res.ok) {
+    setBookings(bookings.map((b: any) =>
+      b.id === bookingId ? { ...b, status } : b
+    ))
+  }
+}
+
+
   if (loading) return (
     <main className="min-h-screen bg-[#fdf6f0] flex items-center justify-center">
       <p className="text-sm text-[#888780]">loading dashboard...</p>
@@ -259,7 +283,7 @@ export default function DashboardPage() {
             <div className="grid grid-cols-3 gap-4 mb-8">
               <div className="bg-white rounded-2xl border border-[#e8e4df] p-5">
                 <p className="text-xs text-[#888780] mb-1">total bookings</p>
-                <p className="text-2xl font-semibold text-[#2c2c2a]">0</p>
+                <p className="text-2xl font-semibold text-[#2c2c2a]">{bookings.length}</p>
               </div>
               <div className="bg-white rounded-2xl border border-[#e8e4df] p-5">
                 <p className="text-xs text-[#888780] mb-1">services listed</p>
@@ -399,31 +423,97 @@ export default function DashboardPage() {
                 {(salon.cards || []).length === 0 ? (
                   <p className="text-sm text-[#888780]">no portfolio cards yet — upload your first look!</p>
                 ) : (
-                  <div className="columns-2 md:columns-3 gap-3">
-                    {salon.cards.map((card: any) => (
-                      <div key={card.id} className="break-inside-avoid mb-3 relative group">
-                        <img src={card.image_url} alt={card.style} className="w-full rounded-2xl object-cover" />
-                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent rounded-b-2xl p-3">
-                          <p className="text-white text-xs font-medium">{card.style}</p>
-                          {card.price && <p className="text-white text-xs opacity-80">R{card.price}</p>}
-                        </div>
-                        <button onClick={() => handleDeleteCard(card.id)}
-                          className="absolute top-2 right-2 bg-white rounded-full w-6 h-6 items-center justify-center text-xs text-[#888780] hidden group-hover:flex">
-                          ✕
-                        </button>
-                      </div>
-                    ))}
-                  </div>
+                  <div className="flex flex-col gap-2">
+  {salon.cards.map((card: any) => (
+    <div key={card.id} className="flex items-center justify-between bg-[#fdf6f0] rounded-2xl px-4 py-3">
+      <div className="flex items-center gap-3">
+        <div className="w-8 h-8 bg-[#E8472A] rounded-lg flex items-center justify-center shrink-0">
+          <span className="text-white text-xs">📸</span>
+        </div>
+        <div>
+          <p className="text-sm font-medium text-[#2c2c2a]">{card.style}</p>
+          <p className="text-xs text-[#888780]">
+            {card.price ? `R${card.price} · ${card.duration} mins` : card.category}
+          </p>
+        </div>
+      </div>
+      <button
+        onClick={() => handleDeleteCard(card.id)}
+        className="text-xs text-[#888780] hover:text-red-500 transition-colors"
+      >
+        remove
+      </button>
+    </div>
+  ))}
+        </div>
                 )}
               </div>
             )}
 
             {activeTab === "bookings" && (
-              <div className="bg-white rounded-2xl border border-[#e8e4df] p-6">
-                <h2 className="text-sm font-medium text-[#2c2c2a] mb-4">upcoming bookings</h2>
-                <p className="text-sm text-[#888780]">no bookings yet — share your KeFresh profile to get started</p>
-              </div>
-            )}
+  <div className="bg-white rounded-2xl border border-[#e8e4df] p-6">
+    <h2 className="text-sm font-medium text-[#2c2c2a] mb-4">
+      bookings ({bookings.length})
+    </h2>
+    {bookings.length === 0 ? (
+      <p className="text-sm text-[#888780]">no bookings yet — share your KeFresh profile to get started</p>
+    ) : (
+      <div className="flex flex-col gap-3">
+        {bookings.map((booking: any) => (
+          <div key={booking.id} className="flex justify-between items-center bg-[#fdf6f0] rounded-2xl px-4 py-4">
+            <div className="flex flex-col gap-1">
+              <p className="text-sm font-medium text-[#2c2c2a]">
+                {booking.users?.first_name} {booking.users?.last_name}
+              </p>
+              <p className="text-xs text-[#888780]">
+                {booking.services?.name} · R{booking.services?.price}
+              </p>
+              <p className="text-xs text-[#888780]">
+                {new Date(booking.date).toLocaleDateString("en-ZA", {
+                  weekday: "short",
+                  day: "numeric",
+                  month: "short",
+                  hour: "2-digit",
+                  minute: "2-digit"
+                })}
+              </p>
+              <p className="text-xs text-[#888780]">
+                📞 {booking.users?.phone}
+              </p>
+            </div>
+            <div className="flex flex-col items-end gap-2">
+              <span className={`text-xs px-3 py-1 rounded-full font-medium ${
+                booking.status === "CONFIRMED"
+                  ? "bg-green-100 text-green-700"
+                  : booking.status === "CANCELLED"
+                  ? "bg-red-100 text-red-700"
+                  : "bg-[#FEF2EF] text-[#E8472A]"
+              }`}>
+                {booking.status.toLowerCase()}
+              </span>
+              {booking.status === "PENDING" && (
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleUpdateBooking(booking.id, "CONFIRMED")}
+                    className="text-xs bg-green-500 text-white px-3 py-1 rounded-full hover:bg-green-600 transition-colors"
+                  >
+                    confirm
+                  </button>
+                  <button
+                    onClick={() => handleUpdateBooking(booking.id, "CANCELLED")}
+                    className="text-xs bg-red-100 text-red-600 px-3 py-1 rounded-full hover:bg-red-200 transition-colors"
+                  >
+                    cancel
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+)}
           </>
         )}
 

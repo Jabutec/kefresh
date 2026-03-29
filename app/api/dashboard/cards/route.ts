@@ -28,6 +28,17 @@ export async function POST(request: Request) {
 
     if (error) throw error
 
+    if (price && duration && style) {
+      await supabase
+        .from("services")
+        .insert([{
+          name: style,
+          price: parseInt(price),
+          duration: parseInt(duration),
+          salon_id: salonId,
+        }])
+    }
+
     return NextResponse.json(card)
   } catch (error) {
     console.error("Error creating card:", error)
